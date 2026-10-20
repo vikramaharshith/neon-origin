@@ -1,0 +1,35 @@
+/* Canonical species roster. All species have equal selection probability. */
+const SPECIES = [
+["Human","Adaptability Protocol","Clears all debuffs, gains +40% movement speed, +30% attack speed, and instant weapon reload for 8 seconds."],
+["Vampire","Sanguine Nanites","Drains maximum health from surrounding enemies, converting it directly into bonus temporary Over-Health for nearby allies."],
+["Cyborg","Overclock Core","Increases base damage output by 50% and reduces all ability cooldowns by 80% for 6 seconds."],
+["Elf","Optical Camouflage","Renders the user completely invisible and silent; the first attack breaking cloak deals 250% bonus critical damage."],
+["Demon","Intimidation Aura","Releases a terrifying pulse that reduces nearby enemies' movement speed by 60% and forces their attacks to deal 40% less damage."],
+["Angel","Aegis Sanctuary","Deploys a protective forcefield dome that renders all allies inside immune to all damage and crowd control for 5 seconds."],
+["Dwarf","Fortress Protocol","Locks into position, gaining 80% damage reduction, massive bonus armor, and infinite ammo capacity while stationary."],
+["Orc","Berserk Overdrive","Converts current shields into bonus attack power, gaining 50% Lifesteal on all physical attacks and total crowd-control immunity."],
+["Werewolf","Apex Predator","Highlights all enemies through walls, grants +70% movement speed toward low-health targets, and empowers melee range."],
+["Gorynych (Hydra-Humanoid)","Multi-Target Lock","Simultaneously locks onto all visible enemies in front of the user, unleashing a devastating volley of armor-shredding blasts."],
+["Gnome","System Jammer","Fires a wide disruption pulse that completely blinds enemy HUDs, disables auto-aim, and silences all active abilities for 5 seconds."],
+["Fairy","Targeting Swarm","Deploys a swarm of hard-light micro-drones that continuously heal allies and mark enemy weak points for bonus damage."],
+["Dragonkin","Roar of Domination","Emits a massive shockwave that knocks down all nearby enemies and applies a heavy 50% armor reduction debuff."],
+["Ghost / Wraith","Phase Shift","Enters a phased state for 6 seconds, becoming untargetable and intangible to pass through walls, barriers, and enemy attacks."],
+["Succubus / Incubus","Neural Seduction","Hacks an enemy's neurological targeting systems, forcing them to turn and fight their own teammates for 5 seconds."],
+["Merfolk","Pressurized Kinetic Barrier","Summons a hard-light pressure wave that reflects all incoming enemy projectiles back toward the attackers."],
+["Siren","Sonic Flash","Fires a high-frequency directional wave that completely blinds enemy screens with a intense whiteout effect and silences abilities."],
+["Centaur","Thruster Stampede","Charges forward with massive momentum, knocking back enemies in the path and destroying enemy barriers on contact."],
+["Minotaur","Seismic Slam","Slams the ground with extreme force, launching nearby enemies high into the air and stunning them upon landing."],
+["Gargoyle","Obsidian Lock","Encases self in indestructible hardened alloy for 5 seconds, rapidly regenerating health while acting as solid physical cover."],
+["Sphinx","Logic Lockdown","Locks down a targeted enemy in a suppression field, preventing them from moving or using abilities until they take heavy direct damage."],
+["Lich","Digital Phylactery","Drops a beacon that instantly revives the user at full health at the beacon's location if eliminated within 15 seconds."],
+["Phoenix","Emergency Override","Upon taking fatal damage, triggers a massive kinetic blast that knocks away enemies and instantly revives the user at 50% health."],
+["Wendigo","Siphon Drain","Instantly drains energy/ammo reserves from target enemies, using it to completely reset all personal ability cooldowns."],
+["Dryad","Bio-Tether","Roots into the ground to deploy bio-cables that tether up to 3 nearby enemies, dragging them together and immobilizing them."],
+["Kitsune","Decoy Array","Spawns 5 hard-light holographic clones that dash outward to scramble lock-on systems before exploding in a physical shockwave."],
+["Cyclops","Precision Target Lock","Locks onto a single enemy target, increasing all damage dealt to that target by 100% across the entire team for 6 seconds."],
+["Satyr","Blink Assault","Rapidly micro-teleports between up to 4 nearby enemies, dealing heavy physical strike damage to each before returning to the start position."],
+["Valkyrie","Field Uplink","Target a downed or critically injured ally to instantly shield them and fully restore their health bar back into the fight."],
+["Gorgon","Petrifying Stare","Emits a wide blinding flash from the eyes that completely stuns all enemies facing the user for 3 seconds."]
+].map(([name,ability,description],id)=>({id,name,ability,description}));
+// Reject the incomplete remainder of the uint32 range to avoid modulo bias.
+function randomSpeciesIndex(random=crypto){const a=new Uint32Array(1),limit=Math.floor(4294967296/SPECIES.length)*SPECIES.length;do{random.getRandomValues(a)}while(a[0]>=limit);return a[0]%SPECIES.length}
