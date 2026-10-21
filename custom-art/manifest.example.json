@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "speciesId": 0,
+      "gender": "F",
+      "hairStyle": "long",
+      "outfitType": "tactical",
+      "headgear": false,
+      "src": "custom-art/human/female-long-tactical.png",
+      "palette": {
+        "hair": [{"color":"#cbd3db","offset":0},{"color":"#a7afb7","offset":-36},{"color":"#ebf3fb","offset":32}],
+        "eyes": [{"color":"#38bcdf","offset":0}],
+        "outfit": [{"color":"#4b6151","offset":0},{"color":"#283e2e","offset":-35},{"color":"#687e6e","offset":29}]
+      }
+    }
+  ]
+}
