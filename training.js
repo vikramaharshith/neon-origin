@@ -27,7 +27,7 @@ function profile(type,id){
  if(type===2){const [kind,damage,cast,interval,ammo,reload,speed,spread]=ranged[id];return {type,id,name,kind,damage,cast,interval,ammo,reload,speed,spread,range:1100,color:kind==='gun'?'#ffc77d':'#bce3c4'}}
  return {type,id,name,kind:'magic',damage:[44,27,40,20,30,18,32,12,0,48,35,15,0,24,12,13,40,36,0,26,24,0,35,8,42][id],cast:spellCasts[id],interval:1.1+spellCasts[id]*.45,range:650,speed:600,color:colors[id],ammo:0};
 }
-const T=globalThis.Training={active:false,returnPosition:null,profile,enter,leave,update,render,cancel,restore};
+const T=globalThis.Training={active:false,returnPosition:null,profile,enter,leave,update,render,cancel,restore,drawEquipped,useEquipped};
 let weapon=profile(1,0),ammo=0,reload=0,cooldown=0,charge=0,casting=false,held=false,aimX=0,aimY=-1,mouse=null,clock=0;
 let targets=[],shots=[],effects=[],areas=[],swing=0,health=70,buff=0,buffName='',statusText='',lastHit=0;
 const panel=document.createElement('section');panel.id='trainingHUD';panel.hidden=true;
@@ -35,6 +35,7 @@ panel.innerHTML='<div class="training-title">TRAINING / 02 <button id="leaveTrai
 document.body.append(panel);
 const style=document.createElement('style');style.textContent='#trainingHUD{position:fixed;top:100px;left:22px;width:300px;padding:15px;background:#081724ed;border:1px solid #527179;z-index:3;font-size:11px}#trainingHUD[hidden]{display:none}.training-title{color:#91fce0;letter-spacing:2px;display:flex;justify-content:space-between;align-items:center}.training-loadout{display:grid;gap:10px;margin:14px 0}.training-loadout label{display:grid;gap:5px;color:#9bb9bf}.training-loadout select{width:100%;padding:8px;background:#142b38;color:#e5f6f2;border:1px solid #3e6069;font:inherit}#trainingHUD button{background:#173441;border:1px solid #43646b;padding:7px;font-size:10px}#weaponTiming{color:#9fb6bd;line-height:1.6;min-height:50px}.training-meter{height:5px;background:#253d48;margin:10px 0}#trainingFill{height:100%;background:#91fce0;width:0}#trainingState{min-height:30px;line-height:1.5}#trainingScore{color:#9fb6bd;margin:7px 0 12px}#trainAttack{display:none;position:fixed;right:22px;bottom:105px;padding:20px;background:#234c59;border:1px solid #91fce0;touch-action:none}#trainAttack[hidden]{display:none!important}@media(pointer:coarse){#trainAttack{display:block}}@media(max-width:700px){#trainingHUD{top:85px;left:12px;width:220px;padding:10px;font-size:9px}.training-loadout{gap:5px;margin:7px 0}#weaponTiming{min-height:0}.training-title{letter-spacing:0}#trainingScore{margin:5px 0}}';document.head.append(style);
 const attackButton=document.createElement('button');attackButton.id='trainAttack';attackButton.textContent='HOLD / ATTACK';attackButton.hidden=true;document.body.append(attackButton);
+function useEquipped(){if(!T.active||combatId===null||powerId===null)return;$('practicePath').value=String(combatId);fillWeapons();$('practiceWeapon').value=String(powerId);equip()}
 function fillWeapons(){const select=$('practiceWeapon');select.replaceChildren();COMBAT[Number($('practicePath').value)].items.forEach(([name],id)=>{const o=document.createElement('option');o.value=id;o.textContent=name;select.append(o)})}
 function equip(){cancel();weapon=profile(Number($('practicePath').value),Number($('practiceWeapon').value));ammo=weapon.ammo;reload=0;cooldown=0;shots=[];areas=[];effects=[];buff=0;buffName='';swing=0;updateInfo()}
 function updateInfo(){
@@ -46,10 +47,11 @@ function updateInfo(){
  $('reloadTraining').hidden=p.kind!=='gun';
 }
 function reset(){targets=[{x:768,y:600,label:'CLOSE',max:250},{x:560,y:390,label:'RANGE',max:350},{x:960,y:340,label:'MOVING',max:350,moving:true},{x:790,y:250,label:'GROUP A',max:250},{x:850,y:250,label:'GROUP B',max:250}].map(t=>({...t,baseX:t.x,hp:t.max,respawn:0,slow:0,stun:0,dot:0}));shots=[];effects=[];areas=[]}
-function enter(){
+function enter(fromDoor=false){
  if(!T.active)T.returnPosition={x:player.x,y:player.y,dir:player.dir};
+ if(fromDoor)T.returnPosition={x:155,y:790,dir:'right'};
  T.active=true;for(const id of ['settings','pause','birth','wardrobe'])if($(id).open)$(id).close();
- clearKeys();secretBuffer='';player.x=768;player.y=755;player.dir='up';mouse=null;aimX=0;aimY=-1;
+ clearKeys();secretBuffer='';player.x=fromDoor?1350:768;player.y=fromDoor?790:755;player.dir=fromDoor?'left':'up';mouse=null;aimX=fromDoor?-1:0;aimY=fromDoor?0:-1;
  $('practicePath').value=combatId===null?'1':String(combatId);fillWeapons();$('practiceWeapon').value=powerId===null?'0':String(powerId);equip();reset();
  panel.hidden=false;attackButton.hidden=false;canvas.tabIndex=0;canvas.focus();$('interact').classList.remove('visible');canvas.setAttribute('aria-label','Training room. WASD move, mouse aim, hold and release left click or Space to attack. R reload.');
  $('objective').textContent='Training · Mouse aim · Hold / release to attack · R reload';persist();
@@ -118,6 +120,7 @@ function update(dt){
  if(reload>0){reload=Math.max(0,reload-dt);if(reload===0)ammo=weapon.ammo}
  const dx=Number(!!(keys.d||keys.arrowright))-Number(!!(keys.a||keys.arrowleft)),dy=Number(!!(keys.s||keys.arrowdown))-Number(!!(keys.w||keys.arrowup)),len=Math.hypot(dx,dy),speed=casting?95:190;
  const oldX=player.x,oldY=player.y;if(len){const x=player.x+dx/len*speed*dt,y=player.y+dy/len*speed*dt;if(!collision(x,player.y))player.x=x;if(!collision(player.x,y))player.y=y;player.dir=dx?dx>0?'right':'left':dy>0?'down':'up';if(!mouse){aimX=dx/len;aimY=dy/len}}
+ if(player.x>=1410&&player.y>=740&&player.y<=840&&dx>0){leave();return}
  player.moving=Math.hypot(player.x-oldX,player.y-oldY)>.001;if(player.moving)walkPhase+=Math.hypot(player.x-oldX,player.y-oldY)*.075;
  aim();if(held){face();if(!reload&&!cooldown){
   if(weapon.kind==='magic'&&casting){charge+=dt;if(charge>=weapon.cast){fire(1);casting=false;charge=0}}
@@ -157,6 +160,14 @@ function drawTarget(t){
  rect(t.x-21,t.y-26,42,50,t.stun?'#b1a1d6':'#345a68');rect(t.x-16,t.y-21,32,40,'#183343');rect(t.x-11,t.y-13,22,24,t.slow?'#85b7d6':'#ae6658');rect(t.x-5,t.y-7,10,12,'#efd9b0');
  rect(t.x-27,t.y-44,54,5,'#0d1924');rect(t.x-27,t.y-44,54*t.hp/t.max,5,'#8ce1b5');label(Math.ceil(t.hp)+' / '+t.max,t.x,t.y-52,'#c3d9de',10);label(t.label,t.x,t.y+60,'#839eaa',9);
 }
+// Show the permanently equipped loadout in the lab, using the same pixel equipment.
+function drawEquipped(drawBody){
+ const old={weapon,aimX,aimY,charge,swing};
+ try{
+  weapon=profile(combatId,powerId);[aimX,aimY]=({up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]})[player.dir];charge=0;swing=0;
+  if(player.dir==='up')drawWeapon();drawBody();if(player.dir!=='up')drawWeapon();
+ }finally{({weapon,aimX,aimY,charge,swing}=old)}
+}
 function drawWeapon(){
  const o=point(),p=weapon,a=Math.atan2(aimY,aimX)+(p.kind==='melee'&&swing?-.6+swing*6:0);
  const ca=Math.cos(a),sa=Math.sin(a),ox=o.x+aimX*20,oy=o.y+aimY*20;
@@ -186,7 +197,7 @@ function drawWeapon(){
  else {stroke(0,0,30,0,'#b1ced8',4);box(24,-6,7,12,'#d3e7e8')}
 }
 function render(){
- ctx.fillStyle='#08131e';ctx.fillRect(0,0,width,height);ctx.save();ctx.translate(width/2,height/2);ctx.scale(zoom,zoom);ctx.translate(-player.x,-player.y);ctx.drawImage(trainingFloor,0,0);
+ ctx.fillStyle='#08131e';ctx.fillRect(0,0,width,height);ctx.save();ctx.translate(width/2,height/2);ctx.scale(zoom,zoom);ctx.translate(-player.x,-player.y);ctx.drawImage(trainingFloor,0,0);rect(1420,730,116,120,'#183641');rect(1430,730,26,8,'#91fce0');rect(1430,842,26,8,'#91fce0');label('HOME LAB →',1370,716,'#91fce0',12);
  for(const a of areas){ctx.globalAlpha=.3;rect(a.x-a.r,a.y-a.r,a.r*2,a.r*2,a.color);ctx.globalAlpha=1;if(a.wall)rect(a.x-25,a.y-65,50,70,a.color)}
  const behind=targets.filter(t=>t.y+40<player.y),front=targets.filter(t=>t.y+40>=player.y);behind.forEach(drawTarget);
  if(aimY<-.5)drawWeapon();if(buffName==='INVISIBLE'&&buff)ctx.globalAlpha=.3;drawPlayer();ctx.globalAlpha=1;if(aimY>=-.5)drawWeapon();front.forEach(drawTarget);
@@ -197,7 +208,7 @@ function render(){
  const ax=o.x+aimX*160,ay=o.y+aimY*160;line(ax-7,ay,ax+7,ay,'#90ddcb');line(ax,ay-7,ax,ay+7,'#90ddcb');ctx.restore();
 }
 $('practicePath').onchange=()=>{fillWeapons();equip()};$('practiceWeapon').onchange=equip;$('leaveTraining').onclick=leave;$('resetTargets').onclick=()=>{cancel();reset()};$('reloadTraining').onclick=beginReload;
-$('trainingButton').onclick=enter;
+
 canvas.addEventListener('pointermove',e=>{if(T.active)mouse={x:e.clientX,y:e.clientY}});
 canvas.addEventListener('pointerdown',e=>{if(!T.active||e.button!==0)return;e.preventDefault();canvas.focus();mouse={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);start()});
 canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',cancel);
